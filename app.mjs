@@ -6,7 +6,7 @@ const PORT = 4000;
 
 // Создаем экземпляр Axios
 const apiInstance = axios.create({
-    baseURL: 'https://api-mh.ertelecom.ru',
+    baseURL: 'https://myhome.proptech.ru',
     headers: {
         'content-type': 'application/json'
     }
@@ -14,6 +14,7 @@ const apiInstance = axios.create({
 
 let token = null;
 let timer = null
+let didUpdateToken = null
 
 // Перехватчик ответа
 apiInstance.interceptors.response.use(async (response) => {
@@ -24,6 +25,7 @@ apiInstance.interceptors.response.use(async (response) => {
         // Если ошибка 401, пробуем обновить токен
         const tokenResponse = await getToken();
         console.log('Получили новый token', tokenResponse.token)
+
         if (tokenResponse.status === 200) {
             token = tokenResponse.token;
             // Устанавливаем новый токен и повторяем запрос
@@ -42,6 +44,7 @@ const getToken = async () => {
             "hash2": "E7B72E8DE46C6796FCEF86CD41521599",
             "hash1": "Y8Kt4y29AHRmJDZCtzGo1hYgJaw="
         });
+        didUpdateToken = true
         return { status: promise.status, token: promise.data.accessToken };
     } catch (error) {
         console.log('Получение токена', error.response.status, error.message);
@@ -57,6 +60,7 @@ app.listen(PORT, () => {
 app.get('/open', async (req, res) => {
     timer = new Date().getTime()
     let result = await openDomofon();
+    didUpdateToken = null
     res.send(result.message);
 });
 
@@ -77,7 +81,7 @@ const openDomofon = async () => {
         });
         if (promise.data.data.status) {
             console.log('Домофон открыт. Заняло ',new Date().getTime()-timer,' ms')
-            return { status: 200, message: 'Домофон открыт' };
+            return { status: 200, message: `Домофон открыт. Заняло ${new Date().getTime()-timer} ms. ${didUpdateToken ? 'Токен был обновлен':'Использован старый токен'}` };
         } else {
             return { status: promise.data.data.status, message: promise.data.data.errorMessage };
         }
