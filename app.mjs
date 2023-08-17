@@ -1,5 +1,19 @@
 import axios from "axios";
+import express from 'express'
 
+const app = express()
+const PORT = 4000
+app.listen(PORT,()=>{
+    console.log('App is listening on port',PORT)
+})
+app.get('/open',async (req,res)=>{
+let result = await openDomofon()
+    if (result.status === 200){
+        console.log('Домофон открыт',result.message)
+        res.send(result.message)
+    }
+    else res.send(result.message)
+})
     let  getToken = async ()=> {
         try {
             let promise = await axios.post('https://api-mh.ertelecom.ru/auth/v2/auth/780040122830/password', {
@@ -12,29 +26,37 @@ import axios from "axios";
                     'content-type': 'application/json',
                 },
             })
-            return (promise.data.accessToken)
+
+            return ({status:promise.status, token:promise.data.accessToken})
         }
         catch (error){
-            console.log(error.response,error.message)
+            console.log('Получение токена',error.response.status,error.message)
+            return ({status: error.response.status,message: error.message})
         }
     }
 
 let openDomofon = async ()=> {
     const TOKEN = await getToken()
-    console.log(TOKEN)
-    try {
-        let promise = await axios.post('https://api-mh.ertelecom.ru/rest/v1/places/5626227/accesscontrols/63309/actions', {"name": "accessControlOpen"}, {
-            headers: {
-                authorization: `Bearer ${TOKEN}`,
-                'content-type': 'application/json',
-                operator: 2
-            },
-        })
-        console.log(promise.data)
-    }
-    catch (error){
-        console.log(error.response.status,error.message)
-    }
-}
 
-openDomofon()
+    if (TOKEN.status===200) {
+        try {
+            let promise = await axios.post('https://api-mh.ertelecom.ru/rest/v1/places/5626227/accesscontrols/63309/actions', {"name": "accessControlOpen"}, {
+                headers: {
+                    authorization: `Bearer ${TOKEN.token}`,
+                    'content-type': 'application/json',
+                    operator: 2
+                },
+            })
+            console.log(promise.data.data)
+            if(promise.data.data.status){
+                return {status:200,message:'Домофон открыт'}
+            }
+            else  return {status:promise.data.data.status,message:promise.data.data.errorMessage}
+
+        } catch (error) {
+            console.log('Открытие домофона',error.response.status,error.message)
+            return {status: error.response.status, message: error.message}
+        }
+    }
+    else return {status:TOKEN.status,message:TOKEN.message}
+}
