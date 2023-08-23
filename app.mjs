@@ -38,16 +38,16 @@ apiInstance.interceptors.response.use(async (response) => {
 
 const getToken = async () => {
     try {
-        let promise = await apiInstance.post('/auth/v2/auth/780040122830/password', {
-            "login": "780040122830",
-            "timestamp": "2023-08-17T15:19:51.834000Z",
-            "hash2": "E7B72E8DE46C6796FCEF86CD41521599",
-            "hash1": "Y8Kt4y29AHRmJDZCtzGo1hYgJaw="
+        let promise = await apiInstance.post('/auth/v2/auth/780040122830/password', {"login":"780040122830",
+            "timestamp":"2023-08-23T20:35:01.628000Z",
+            "hash1":"Y8Kt4y29AHRmJDZCtzGo1hYgJaw=",
+            "hash2":"2D6B5CA5081C0EE2B52983380CE060EE"
         });
+
         didUpdateToken = true
         return { status: promise.status, token: promise.data.accessToken };
     } catch (error) {
-        console.log('Получение токена', error.response.status, error.message);
+        console.log('Ошибка получения токена', error.response.status, error.message);
         return { status: error.response.status, message: error.message };
     }
 };
@@ -60,6 +60,7 @@ app.listen(PORT, () => {
 app.get('/open', async (req, res) => {
     timer = new Date().getTime()
     let result = await openDomofon();
+    console.log(result)
     didUpdateToken = null
     res.send(result.message);
 });
